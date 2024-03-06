@@ -36,11 +36,28 @@
                     <input type="text" name="email" id="email" size="45"/>
                 </td>
             </tr>
+<%--            <tr>--%>
+<%--                <th>Country:</th>--%>
+<%--                <td>--%>
+<%--                    <input type="int" name="countryId" id="countryId" size="15"/>--%>
+<%--                </td>--%>
+<%--            </tr>--%>
             <tr>
-                <th>Country:</th>
-                <td>
-                    <input type="text" name="country" id="country" size="15"/>
-                </td>
+                    <th>Country:</th>
+                    <td>
+                        <select name="countryId">
+                            <option>--Choose Country--</option>
+                            <c:forEach var="country" items="${countryList}">
+                                <option value="${country.getId()}">${country.getName()}</option>
+                            </c:forEach>
+                        </select>
+                        <form method="post" action="process.php">
+                            <!-- Các trường nhập liệu trong form -->
+
+                            <!-- Nút button không liên quan đến form -->
+                            <button type="button" onclick="redirectToCountryCreate()">New</button>
+                        </form>
+                    </td>
             </tr>
             <tr>
                 <td colspan="2" align="center">
@@ -51,4 +68,10 @@
     </form>
 </div>
 </body>
+<script>
+    function redirectToCountryCreate() {
+        // Chuyển hướng đến trang country?action=create
+        window.location.href = 'country?action=create';
+    }
+</script>
 </html>

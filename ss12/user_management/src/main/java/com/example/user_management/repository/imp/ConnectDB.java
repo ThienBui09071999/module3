@@ -1,5 +1,6 @@
 package com.example.user_management.repository.imp;
 
+import com.example.user_management.DTO.UserDTO;
 import com.example.user_management.model.User;
 import com.example.user_management.repository.IUserDAO;
 
@@ -8,18 +9,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ConnectDB implements IUserDAO {
-    private String URL = "jdbc:mysql://localhost:3306/demo?useSSL=false";
+    private String URL = "jdbc:mysql://localhost:3306/demo1?useSSL=false";
     private String USER = "root";
     private String PASS = "Thien123@";
 
-    private static final String INSERT_USERS_SQL = "INSERT INTO users (name, email, country) VALUES (?, ?, ?);";
-    private static final String SELECT_USER_BY_ID = "select id,name,email,country from users where id =?";
-    private static final String SELECT_ALL_USERS = "select * from users";
+    private static final String INSERT_USERS_SQL = "INSERT INTO users (name, email, countryId) VALUES (?, ?, ?);";
+    private static final String SELECT_USER_BY_ID = "select * from users where id=?";
+    private static final String SELECT_ALL_USERS = "select u.id, u.name, u.email, c.country_name as country from users u join country c on u.countryId = c.countryId;";
     private static final String DELETE_USERS_SQL = "delete from users where id = ?;";
-    private static final String UPDATE_USERS_SQL = "update users set name = ?,email= ?, country =? where id = ?;";
+    private static final String UPDATE_USERS_SQL = "update users set name = ?,email= ?, countryId =? where id = ?;";
 
-    private static final String SEARCH_COUNTRY_SQL = "SELECT * FROM users WHERE country LIKE CONCAT('%', ?, '%');";
-    private static final String SORT_NAME_SQL = "select * from users order by name;";
+    private static final String SEARCH_COUNTRY_SQL = "select u.id, u.name, u.email, c.country_name as country from users u join country c on u.countryId = c.countryId where c.country_name like ?;";
+    private static final String SORT_NAME_SQL = "select u.id, u.name, u.email, c.country_name as country from users u join country c on u.countryId = c.countryId order by u.name;";
     public ConnectDB() {
     }
 
@@ -42,7 +43,7 @@ public class ConnectDB implements IUserDAO {
              PreparedStatement preparedStatement = connection.prepareStatement(INSERT_USERS_SQL)) {
             preparedStatement.setString(1, user.getName());
             preparedStatement.setString(2, user.getEmail());
-            preparedStatement.setString(3, user.getCountry());
+            preparedStatement.setInt(3, user.getCountryId());
             System.out.println(preparedStatement);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
@@ -62,8 +63,8 @@ public class ConnectDB implements IUserDAO {
             while (rs.next()) {
                 String name = rs.getString("name");
                 String email = rs.getString("email");
-                String country = rs.getString("country");
-                user = new User(id, name, email, country);
+                int idcountry = rs.getInt("countryId");
+                user = new User(id, name, email, idcountry);
             }
         } catch (SQLException e) {
             printSQLException(e);
@@ -72,11 +73,10 @@ public class ConnectDB implements IUserDAO {
     }
 
     @Override
-    public List<User> selectAllUsers() {
-        List<User> users = new ArrayList<>();
+    public List<UserDTO> selectAllUsers() {
+        List<UserDTO> usersDTO = new ArrayList<>();
         try (
                 Connection connection = getConnection();
-
                 PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALL_USERS);) {
             System.out.println(preparedStatement);
             ResultSet rs = preparedStatement.executeQuery();
@@ -86,7 +86,7 @@ public class ConnectDB implements IUserDAO {
                 String name = rs.getString("name");
                 String email = rs.getString("email");
                 String country = rs.getString("country");
-                users.add(new User(id, name, email, country));
+                usersDTO.add(new UserDTO(id, name, email, country));
             }
         } catch (SQLException e) {
             printSQLException(e);
@@ -98,13 +98,14 @@ public class ConnectDB implements IUserDAO {
                 throw new RuntimeException(e);
             }
         }
-        return users;
+        return usersDTO;
     }
 
     @Override
     public boolean deleteUser(int id) throws SQLException {
         boolean rowDeleted;
-        try (Connection connection = getConnection(); PreparedStatement statement = connection.prepareStatement(DELETE_USERS_SQL);) {
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(DELETE_USERS_SQL);) {
             statement.setInt(1, id);
             rowDeleted = statement.executeUpdate() > 0;
         }
@@ -114,10 +115,11 @@ public class ConnectDB implements IUserDAO {
     @Override
     public boolean updateUser(User user) throws SQLException {
         boolean rowUpdated;
-        try (Connection connection = getConnection(); PreparedStatement statement = connection.prepareStatement(UPDATE_USERS_SQL);) {
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(UPDATE_USERS_SQL);) {
             statement.setString(1, user.getName());
             statement.setString(2, user.getEmail());
-            statement.setString(3, user.getCountry());
+            statement.setInt(3, user.getCountryId());
             statement.setInt(4, user.getId());
 
             rowUpdated = statement.executeUpdate() > 0;
@@ -126,14 +128,13 @@ public class ConnectDB implements IUserDAO {
     }
 
     @Override
-    public List<User> findByCountry(String countryFind) throws SQLException {
-        List<User> users = new ArrayList<>();
+    public List<UserDTO> findByCountry(String countryFind) throws SQLException {
+        List<UserDTO> usersDTO = new ArrayList<>();
         try (
                 Connection connection = getConnection();
-
                 PreparedStatement preparedStatement = connection.prepareStatement(SEARCH_COUNTRY_SQL);)
         {
-            preparedStatement.setString(1,countryFind);
+            preparedStatement.setString(1,"%"+countryFind+"%");
             System.out.println(preparedStatement);
             ResultSet rs = preparedStatement.executeQuery();
 
@@ -142,7 +143,7 @@ public class ConnectDB implements IUserDAO {
                 String name = rs.getString("name");
                 String email = rs.getString("email");
                 String country = rs.getString("country");
-                users.add(new User(id, name, email, country));
+                usersDTO.add(new UserDTO(id, name, email, country));
             }
         } catch (SQLException e) {
             printSQLException(e);
@@ -154,12 +155,12 @@ public class ConnectDB implements IUserDAO {
                 throw new RuntimeException(e);
             }
         }
-        return users;
+        return usersDTO;
     }
 
     @Override
-    public List<User> sortByName() throws SQLException {
-        List<User> users = new ArrayList<>();
+    public List<UserDTO> sortByName() throws SQLException {
+        List<UserDTO> usersDTO = new ArrayList<>();
         try (
                 Connection connection = getConnection();
 
@@ -172,7 +173,8 @@ public class ConnectDB implements IUserDAO {
                 String name = rs.getString("name");
                 String email = rs.getString("email");
                 String country = rs.getString("country");
-                users.add(new User(id, name, email, country));
+//                int countryId = rs.getInt("country");
+                usersDTO.add(new UserDTO(id, name, email, country));
             }
         } catch (SQLException e) {
             printSQLException(e);
@@ -184,7 +186,7 @@ public class ConnectDB implements IUserDAO {
                 throw new RuntimeException(e);
             }
         }
-        return users;
+        return usersDTO;
     }
     private void printSQLException(SQLException ex) {
         for (Throwable e : ex) {

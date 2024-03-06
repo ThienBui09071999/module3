@@ -1,7 +1,9 @@
 package com.example.user_management.controller;
 
+import com.example.user_management.DTO.UserDTO;
 import com.example.user_management.model.User;
 import com.example.user_management.repository.imp.ConnectDB;
+import com.example.user_management.repository.imp.CountryConnectDB;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -21,6 +23,7 @@ public class UserServlet extends HttpServlet {
     public void init() {
         userDAO = new ConnectDB();
     }
+    CountryConnectDB countryConnectDB = new CountryConnectDB();
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -78,7 +81,7 @@ public class UserServlet extends HttpServlet {
     }
     private void listUser(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException, ServletException {
-        List<User> listUser = userDAO.selectAllUsers();
+        List<UserDTO> listUser = userDAO.selectAllUsers();
         request.setAttribute("listUser", listUser);
         RequestDispatcher dispatcher = request.getRequestDispatcher("view/user/list.jsp");
         dispatcher.forward(request, response);
@@ -86,6 +89,7 @@ public class UserServlet extends HttpServlet {
 
     private void showNewForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        request.setAttribute("countryList", countryConnectDB.selectAllCountry());
         RequestDispatcher dispatcher = request.getRequestDispatcher("view/user/create.jsp");
         dispatcher.forward(request, response);
     }
@@ -94,15 +98,16 @@ public class UserServlet extends HttpServlet {
             throws SQLException, ServletException, IOException {
         int id = Integer.parseInt(request.getParameter("id"));
         User existingUser = userDAO.selectUser(id);
-        RequestDispatcher dispatcher = request.getRequestDispatcher("view/user/edit.jsp");
+        request.setAttribute("countryList", countryConnectDB.selectAllCountry());
         request.setAttribute("user", existingUser);
+        RequestDispatcher dispatcher = request.getRequestDispatcher("view/user/edit.jsp");
         dispatcher.forward(request, response);
 
     }
 
     private void listUserSortByName(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException, ServletException {
-        List<User> listUser = userDAO.sortByName();
+        List<UserDTO> listUser = userDAO.sortByName();
         request.setAttribute("listUser", listUser);
         RequestDispatcher dispatcher = request.getRequestDispatcher("view/user/list.jsp");
         dispatcher.forward(request, response);
@@ -111,9 +116,9 @@ public class UserServlet extends HttpServlet {
     private void listUserFindByCountry(HttpServletRequest request, HttpServletResponse response)
             throws SQLException, IOException, ServletException {
         String countryName = request.getParameter("countryName");
-        List<User> listUser = userDAO.findByCountry(countryName);
+        List<UserDTO> listUser = userDAO.findByCountry(countryName);
         request.setAttribute("listUser", listUser);
-        request.setAttribute("countryName",countryName);
+//        request.setAttribute("countryName",countryName);
         RequestDispatcher dispatcher = request.getRequestDispatcher("view/user/list.jsp");
         dispatcher.forward(request, response);
     }
@@ -122,8 +127,8 @@ public class UserServlet extends HttpServlet {
             throws SQLException, IOException, ServletException {
         String name = request.getParameter("name");
         String email = request.getParameter("email");
-        String country = request.getParameter("country");
-        User newUser = new User(name, email, country);
+        int countryId = Integer.parseInt(request.getParameter("countryId"));
+        User newUser = new User(name, email, countryId);
         userDAO.insertUser(newUser);
         RequestDispatcher dispatcher = request.getRequestDispatcher("view/user/create.jsp");
         dispatcher.forward(request, response);
@@ -134,10 +139,13 @@ public class UserServlet extends HttpServlet {
         int id = Integer.parseInt(request.getParameter("id"));
         String name = request.getParameter("name");
         String email = request.getParameter("email");
-        String country = request.getParameter("country");
+        int countryId = Integer.parseInt(request.getParameter("countryId"));
 
-        User book = new User(id, name, email, country);
-        userDAO.updateUser(book);
+        User newUser = new User(id, name, email, countryId);
+        userDAO.updateUser(newUser);
+        User existingUser = userDAO.selectUser(id);
+        request.setAttribute("countryList", countryConnectDB.selectAllCountry());
+        request.setAttribute("user", existingUser);
         RequestDispatcher dispatcher = request.getRequestDispatcher("view/user/edit.jsp");
         dispatcher.forward(request, response);
     }
@@ -147,7 +155,7 @@ public class UserServlet extends HttpServlet {
         int id = Integer.parseInt(request.getParameter("id"));
         userDAO.deleteUser(id);
 
-        List<User> listUser = userDAO.selectAllUsers();
+        List<UserDTO> listUser = userDAO.selectAllUsers();
         request.setAttribute("listUser", listUser);
         RequestDispatcher dispatcher = request.getRequestDispatcher("view/user/list.jsp");
         dispatcher.forward(request, response);

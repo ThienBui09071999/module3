@@ -26,31 +26,52 @@
                     Edit User
                 </h2>
             </caption>
-            <c:if test="${user != null}">
-                <input type="hidden" name="id" value="<c:out value='${user.id}' />"/>
-            </c:if>
             <tr>
                 <th>User Name:</th>
                 <td>
-                    <input type="text" name="name" size="45"
-                           value="<c:out value='${user.name}' />"
+                    <input type="text" name="name" id="name" size="45"
+                           value="<c:out value='${user.getName()}' />"
                     />
                 </td>
             </tr>
             <tr>
                 <th>User Email:</th>
                 <td>
-                    <input type="text" name="email" size="45"
-                           value="<c:out value='${user.email}' />"
+                    <input type="text" name="email" id="email" size="45"
+                           value="<c:out value='${user.getEmail()}' />"
                     />
                 </td>
             </tr>
+<%--            <tr>--%>
+<%--                <th>Country:</th>--%>
+<%--                <td>--%>
+<%--                    <input type="text" name="countryId" size="15"--%>
+<%--                           value="<c:out value='${user.countryId}' />"--%>
+<%--                    />--%>
+<%--                </td>--%>
+<%--            </tr>--%>
             <tr>
                 <th>Country:</th>
                 <td>
-                    <input type="text" name="country" size="15"
-                           value="<c:out value='${user.country}' />"
-                    />
+                    <select name="countryId" id="countryId">
+                        <c:forEach var="country" items="${countryList}">
+                            <c:if test="${user.getCountryId() == country.getId()}">
+                                <option selected value="${country.id}">${country.getName()}</option>
+                            </c:if>
+                            <c:if test="${user.getCountryId() != country.getId()}">
+                                <option value="${country.id}">${country.getName()}</option>
+                            </c:if>
+                        </c:forEach>
+                    </select>
+                    <form method="post">
+                        <c:if test="${user != null}">
+                            <input type="hidden" name="id" value="<c:out value='${user.getId()}' />"/>
+                        </c:if>
+                        <!-- Các trường nhập liệu trong form -->
+
+                        <!-- Nút button không liên quan đến form -->
+                        <button type="button" onclick="redirectToCountryCreate()">New</button>
+                    </form>
                 </td>
             </tr>
             <tr>
@@ -62,4 +83,10 @@
     </form>
 </div>
 </body>
+<script>
+    function redirectToCountryCreate() {
+        // Chuyển hướng đến trang country?action=create
+        window.location.href = 'country?action=createOffEdit&id=${user.id}';
+    }
+</script>
 </html>
